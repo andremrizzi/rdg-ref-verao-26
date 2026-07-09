@@ -442,6 +442,26 @@ tbody tr.ns{opacity:.35;}
       <option value="TODOS">Todos os Representantes</option>
     </select>
   </div>
+  <div class="ref-filtro-wrap" style="flex-wrap:wrap;align-items:center;gap:10px;margin-top:8px;">
+    <label style="margin-right:4px;">Região:</label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer;background:var(--bg3);padding:4px 10px;border-radius:6px;border:1px solid var(--border);">
+      <input type="checkbox" class="reg-chk" value="Sul" checked onchange="toggleRegiao(this)"> Sul
+    </label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer;background:var(--bg3);padding:4px 10px;border-radius:6px;border:1px solid var(--border);">
+      <input type="checkbox" class="reg-chk" value="Sudeste" checked onchange="toggleRegiao(this)"> Sudeste
+    </label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer;background:var(--bg3);padding:4px 10px;border-radius:6px;border:1px solid var(--border);">
+      <input type="checkbox" class="reg-chk" value="Nordeste" checked onchange="toggleRegiao(this)"> Nordeste
+    </label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer;background:var(--bg3);padding:4px 10px;border-radius:6px;border:1px solid var(--border);">
+      <input type="checkbox" class="reg-chk" value="Norte" checked onchange="toggleRegiao(this)"> Norte
+    </label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer;background:var(--bg3);padding:4px 10px;border-radius:6px;border:1px solid var(--border);">
+      <input type="checkbox" class="reg-chk" value="Centro-Oeste" checked onchange="toggleRegiao(this)"> Centro-Oeste
+    </label>
+    <button onclick="marcarTodasRegioes(true)" style="font-size:.72rem;background:none;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:6px;cursor:pointer;">Marcar todas</button>
+    <button onclick="marcarTodasRegioes(false)" style="font-size:.72rem;background:none;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:6px;cursor:pointer;">Desmarcar todas</button>
+  </div>
   <div class="ref-kpi-grid" id="ref-kpis"></div>
   <div class="sec">Distribuição por Tipo de Produto</div>
   <div id="ref-seg-kpis"></div>
@@ -646,7 +666,8 @@ function getCompSeg(seg){
   var grupos={};
   var refsVistas={};
   RAW_REF.forEach(function(r){
-    var ref=r[1],desc=r[2];
+    var rep=r[0],ref=r[1],desc=r[2];
+    if(!repNaRegiaoAtiva(rep)) return;
     var u=desc.toUpperCase();
     var s;
     if(u.indexOf('PLUS')>=0) s='plus';
@@ -4455,12 +4476,32 @@ function getModelagem(desc) {
   return desc.replace(/FEM\.|MASC\.|CALCA|SHORTS|SAIA|BERMUDA|BLUSA|TOP|VESTIDO/gi,'').trim().split(' ').slice(0,3).join(' ');
 }
 
+var REGIOES_ATIVAS=new Set(['Sul','Sudeste','Nordeste','Norte','Centro-Oeste']);
+function repNaRegiaoAtiva(rep){
+  var info=REPS[rep];
+  if(!info) return true;
+  return REGIOES_ATIVAS.has(info.reg);
+}
+function toggleRegiao(chk){
+  if(chk.checked) REGIOES_ATIVAS.add(chk.value);
+  else REGIOES_ATIVAS.delete(chk.value);
+  renderReferencias();
+}
+function marcarTodasRegioes(marcar){
+  document.querySelectorAll('.reg-chk').forEach(function(c){
+    c.checked=marcar;
+    if(marcar) REGIOES_ATIVAS.add(c.value);
+    else REGIOES_ATIVAS.delete(c.value);
+  });
+  renderReferencias();
+}
 function getRefDados(codRep) {
   var m={};
   for(var i=0;i<RAW_REF.length;i++){
     var row=RAW_REF[i];
     var rep=row[0],cod=row[1],desc=row[2],qtde=row[3],isPack=row[4]===true;
     if(codRep!=='TODOS'&&rep!==codRep) continue;
+    if(!repNaRegiaoAtiva(rep)) continue;
     if(!m[cod]) m[cod]={cod:cod,desc:desc,qtde:0,tipo:getTipo(cod),mod:getModelagem(desc),pack:isPack};
     m[cod].qtde+=qtde;
     if(isPack) m[cod].pack=true;
